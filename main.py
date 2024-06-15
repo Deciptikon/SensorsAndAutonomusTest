@@ -10,12 +10,19 @@ WIDTH, HEIGHT = 800, 600
 CAR_WIDTH, CAR_HEIGHT = 50, 30
 SENSOR_RADIUS = 100
 
+ANTIACCELERATE = 0.01
+DELTAACCELERATE = 0.1
+DELTAANGLESPEED = 1
+MAXACCELERATE = 1
+MAXANGLESPEED = 5
+
 # Цвета
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+LIGHTBLUE = (100, 100, 255)
 
 # Настройка экрана
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -28,11 +35,37 @@ class Car:
         self.y = y
         self.angle = 0
         self.speed = 0
+        self.accelerate = 0
         self.angle_speed = 0
         self.trajectory = []
+        self.image = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
+        self.image.fill(BLUE)
+        
+        h = 5 
+        w = 7
+        red_rect_size = (w, h)
+        pygame.draw.rect(self.image, RED, (CAR_WIDTH - w, 0, *red_rect_size))
+        pygame.draw.rect(self.image, RED, (CAR_WIDTH - w, CAR_HEIGHT - h, *red_rect_size))
+        pygame.draw.rect(self.image, LIGHTBLUE, (0, 0, *(2/3*CAR_WIDTH, CAR_HEIGHT)))
 
     def update(self):
         # Обновление позиции и угла
+        if self.accelerate > DELTAACCELERATE :
+            self.accelerate -= ANTIACCELERATE
+        elif self.accelerate < -DELTAACCELERATE :
+            self.accelerate += ANTIACCELERATE
+        else:
+            self.accelerate /= 2
+        
+        
+        if self.angle_speed > DELTAANGLESPEED :
+            self.angle_speed -= DELTAANGLESPEED
+        elif self.angle_speed < -DELTAANGLESPEED :
+            self.angle_speed += DELTAANGLESPEED
+        else:
+            self.angle_speed /= 2
+        
+        self.speed += self.accelerate
         self.x += self.speed * math.cos(math.radians(self.angle))
         self.y -= self.speed * math.sin(math.radians(self.angle))
         self.angle += self.angle_speed
@@ -47,27 +80,37 @@ class Car:
         for point in self.trajectory:
             pygame.draw.circle(screen, GREEN, (int(point[0]), int(point[1])), 2)
 
+        # Поворот машины
+        rotated_image = pygame.transform.rotate(self.image, self.angle)
+        new_rect = rotated_image.get_rect(center=(self.x, self.y))
+
         # Отрисовка машины
-        car_rect = pygame.Rect(0, 0, CAR_WIDTH, CAR_HEIGHT)
-        car_rect.center = (self.x, self.y)
-        rotated_car = pygame.transform.rotate(pygame.Surface((CAR_WIDTH, CAR_HEIGHT)), self.angle)
-        rotated_car.fill(BLUE)
-        screen.blit(rotated_car, rotated_car.get_rect(center=car_rect.center))
+        screen.blit(rotated_image, new_rect.topleft)
 
     def control(self, keys):
         if keys[pygame.K_w]:
-            self.speed = 5
-        elif keys[pygame.K_s]:
-            self.speed = -5
-        else:
-            self.speed = 0
+            self.accelerate += DELTAACCELERATE
+        if keys[pygame.K_s]:
+            self.accelerate -= DELTAACCELERATE
+        #else:
+            #self.speed = 0
 
         if keys[pygame.K_a]:
-            self.angle_speed = 5
-        elif keys[pygame.K_d]:
-            self.angle_speed = -5
-        else:
-            self.angle_speed = 0
+            self.angle_speed += DELTAANGLESPEED
+        if keys[pygame.K_d]:
+            self.angle_speed -= DELTAANGLESPEED
+        #else:
+           # self.angle_speed = 0
+
+        if self.accelerate > MAXACCELERATE :
+            self.accelerate = MAXACCELERATE
+        if self.accelerate < -MAXACCELERATE : 
+            self.accelerate = -MAXACCELERATE
+        
+        if self.angle_speed > MAXANGLESPEED :
+            self.accelerate = MAXANGLESPEED
+        if self.angle_speed < -MAXANGLESPEED :
+            self.accelerate = -MAXANGLESPEED
 
 # Виртуальный датчик
 class Sensor:
