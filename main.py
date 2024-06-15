@@ -4,6 +4,9 @@ import math
 # Инициализация Pygame
 pygame.init()
 
+pygame.font.init()
+font = pygame.font.SysFont(None, 24)
+
 # Константы
 VERSION = '1.0'
 WIDTH, HEIGHT = 800, 600
@@ -11,7 +14,7 @@ CAR_WIDTH, CAR_HEIGHT = 50, 30
 SENSOR_RADIUS = 100
 
 ANTIACCELERATE = 0.01
-DELTAACCELERATE = 0.1
+DELTAACCELERATE = 0.01
 DELTAANGLESPEED = 1
 MAXACCELERATE = 1
 MAXANGLESPEED = 5
@@ -122,6 +125,10 @@ class Sensor:
     def draw(self, screen):
         pygame.draw.circle(screen, RED, (self.x, self.y), self.radius, 1)
 
+def draw_text(screen, text, pos):
+    text_surface = font.render(text, True, BLACK)
+    screen.blit(text_surface, pos)
+
 def main():
     clock = pygame.time.Clock()
     car = Car(WIDTH // 2, HEIGHT // 2)
@@ -145,6 +152,10 @@ def main():
         car.draw(screen)
         for sensor in sensors:
             sensor.draw(screen)
+
+        # Вывод текста
+        draw_text(screen, f'Speed: {car.speed}', (10, HEIGHT - 40))
+        draw_text(screen, f'Angle: {car.angle}', (10, HEIGHT - 20))
 
         pygame.display.flip()
         clock.tick(60)
