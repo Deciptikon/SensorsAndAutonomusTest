@@ -8,7 +8,7 @@ pygame.font.init()
 font = pygame.font.SysFont(None, 24)
 
 # Константы
-VERSION = '1.0'
+VERSION = '1.1'
 WIDTH, HEIGHT = 800, 600
 CAR_WIDTH, CAR_HEIGHT = 50, 30
 SENSOR_RADIUS = 100
@@ -35,7 +35,7 @@ pygame.display.set_caption(f'Simulation {VERSION}')
 
 # Модель транспортного средства
 class Car:
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
         self.angle = 0
@@ -43,6 +43,10 @@ class Car:
         self.accelerate = 0
         self.angle_speed = 0
         self.trajectory = []
+        
+        self.driving_history = [] 
+        self.sensor_history = [] 
+        
         self.image = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
         self.image.fill(BLUE)
         
@@ -127,10 +131,11 @@ class Car:
 
 # Виртуальный датчик
 class Sensor:
-    def __init__(self, x, y, radius):
+    def __init__(self, x: float, y: float, radius: float, id: int):
         self.x = x
         self.y = y
         self.radius = radius
+        self.id = id
 
     def draw(self, screen):
         pygame.draw.circle(screen, RED, (self.x, self.y), self.radius, 1)
@@ -142,7 +147,7 @@ def draw_text(screen, text, pos):
 def main():
     clock = pygame.time.Clock()
     car = Car(WIDTH // 2, HEIGHT // 2)
-    sensors = [Sensor(100, 100, SENSOR_RADIUS), Sensor(700, 500, SENSOR_RADIUS)]
+    sensors = [Sensor(100, 100, SENSOR_RADIUS, 0), Sensor(700, 500, SENSOR_RADIUS, 1)]
 
     running = True
     while running:
