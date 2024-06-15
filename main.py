@@ -13,11 +13,13 @@ WIDTH, HEIGHT = 800, 600
 CAR_WIDTH, CAR_HEIGHT = 50, 30
 SENSOR_RADIUS = 100
 
-ANTIACCELERATE = 0.01
-DELTAACCELERATE = 0.01
-DELTAANGLESPEED = 1
+
+DELTAACCELERATE = 0.001
+DELTAANGLESPEED = 0.01
 MAXACCELERATE = 1
 MAXANGLESPEED = 5
+
+ACCURACY = 0.00001
 
 # Цвета
 WHITE = (255, 255, 255)
@@ -53,22 +55,30 @@ class Car:
 
     def update(self):
         # Обновление позиции и угла
-        if self.accelerate > DELTAACCELERATE :
-            self.accelerate -= ANTIACCELERATE
-        elif self.accelerate < -DELTAACCELERATE :
-            self.accelerate += ANTIACCELERATE
-        else:
-            self.accelerate /= 2
+        
+        self.accelerate *= 0.96
+        
+        if abs(self.accelerate) < ACCURACY :
+            self.accelerate = 0
         
         
-        if self.angle_speed > DELTAANGLESPEED :
-            self.angle_speed -= DELTAANGLESPEED
-        elif self.angle_speed < -DELTAANGLESPEED :
-            self.angle_speed += DELTAANGLESPEED
-        else:
-            self.angle_speed /= 2
+        
+        self.angle_speed *= 0.99
+        
+        if abs(self.angle_speed) < ACCURACY :
+            self.angle_speed = 0
         
         self.speed += self.accelerate
+        self.speed *= 0.98
+        
+        if abs(self.speed) < ACCURACY :
+            self.speed = 0
+        if abs(self.speed) > 5 :
+            if self.speed > 0 :
+                self.speed = 5
+            else:
+                self.speed = -5
+        
         self.x += self.speed * math.cos(math.radians(self.angle))
         self.y -= self.speed * math.sin(math.radians(self.angle))
         self.angle += self.angle_speed
@@ -154,7 +164,10 @@ def main():
             sensor.draw(screen)
 
         # Вывод текста
-        draw_text(screen, f'Speed: {car.speed}', (10, HEIGHT - 40))
+        
+        draw_text(screen, f'Accelerate: {car.accelerate}', (10, HEIGHT - 80))
+        draw_text(screen, f'Speed: {car.speed}', (10, HEIGHT - 60))
+        draw_text(screen, f'Angle speed: {car.angle_speed}', (10, HEIGHT - 40))
         draw_text(screen, f'Angle: {car.angle}', (10, HEIGHT - 20))
 
         pygame.display.flip()
