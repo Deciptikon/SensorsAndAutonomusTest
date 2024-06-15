@@ -85,12 +85,14 @@ class Car:
         
         self.x += self.speed * math.cos(math.radians(self.angle))
         self.y -= self.speed * math.sin(math.radians(self.angle))
-        self.angle += self.angle_speed
+        if self.speed != 0:
+            self.angle += self.angle_speed
 
         # Запоминание траектории
-        self.trajectory.append((self.x, self.y))
-        if len(self.trajectory) > 1000:
-            self.trajectory.pop(0)
+        if self.speed != 0:
+            self.trajectory.append((self.x, self.y))
+            if len(self.trajectory) > 1000:
+                self.trajectory.pop(0)
 
     def draw(self, screen):
         # Отрисовка траектории
@@ -139,6 +141,7 @@ class Sensor:
 
     def draw(self, screen):
         pygame.draw.circle(screen, RED, (self.x, self.y), self.radius, 1)
+        draw_text(screen, f'{self.id }', (self.x, self.y))
 
 def draw_text(screen, text, pos):
     text_surface = font.render(text, True, BLACK)
@@ -147,7 +150,11 @@ def draw_text(screen, text, pos):
 def main():
     clock = pygame.time.Clock()
     car = Car(WIDTH // 2, HEIGHT // 2)
-    sensors = [Sensor(100, 100, SENSOR_RADIUS, 0), Sensor(700, 500, SENSOR_RADIUS, 1)]
+    sensors = [
+        Sensor(100, 100, SENSOR_RADIUS, 0), 
+        Sensor(200, 200, SENSOR_RADIUS, 1),
+        Sensor(200, 500, SENSOR_RADIUS, 2),
+        Sensor(700, 200, SENSOR_RADIUS, 3),]
 
     running = True
     while running:
