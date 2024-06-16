@@ -1,5 +1,6 @@
 import pygame
 import math
+import json
 
 # Инициализация Pygame
 pygame.init()
@@ -9,7 +10,7 @@ font = pygame.font.SysFont(None, 24)
 
 # Константы
 VERSION = '1.1'
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1024, 768
 CAR_WIDTH, CAR_HEIGHT = 50, 30
 SENSOR_RADIUS = 100
 
@@ -19,7 +20,7 @@ DELTAANGLESPEED = 0.01
 MAXACCELERATE = 1
 MAXANGLESPEED = 5
 
-ACCURACY = 0.00001
+ACCURACY = 0.0001
 
 # Цвета
 WHITE = (255, 255, 255)
@@ -138,10 +139,71 @@ class Sensor:
         self.y = y
         self.radius = radius
         self.id = id
+        
+        self._r2 = pow(self.radius, 2)
+        
+        self._is_dragging = False
+        self._original_x = 0
+        self._original_y = 0
+        
+        self._car_in_radius = False
 
     def draw(self, screen):
-        pygame.draw.circle(screen, RED, (self.x, self.y), self.radius, 1)
+        w = 1
+        if self._car_in_radius:
+            w = 3
+        
+        
+        if self._is_dragging :
+            pygame.draw.circle(screen, GREEN, (self.x, self.y), self.radius, w)
+        else:
+            pygame.draw.circle(screen, RED, (self.x, self.y), self.radius, w)
         draw_text(screen, f'{self.id }', (self.x, self.y))
+    
+    def drag(self):
+        left, middle, right = pygame.mouse.get_pressed()
+        if left:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            r2 = pow(mouse_x - self.x, 2) + pow(mouse_y - self.y, 2)
+            if r2 < self._r2 :
+                if self._is_dragging :
+                    self.x += mouse_x - self._original_x
+                    self.y += mouse_y - self._original_y
+                    self._original_x = mouse_x
+                    self._original_y = mouse_y
+                else:
+                    self._is_dragging = True
+                    self._original_x = mouse_x
+                    self._original_y = mouse_y
+        else:
+            self._is_dragging = False
+    
+    def check_car(self, car: Car):
+        if pow(car.x - self.x, 2) + pow(car.y - self.y, 2) < self._r2:
+            self._car_in_radius = True
+            #print("CAR IN RADIUS")
+        else:
+            self._car_in_radius = False
+
+def save_sensors(sensors, filename='sensors.json'):
+    sensor_data = [{'x': sensor.x, 
+                    'y': sensor.y, 
+                    'radius': sensor.radius, 
+                    'id': sensor.id} for sensor in sensors]
+    with open(filename, 'w') as f:
+        json.dump(sensor_data, f)
+
+def load_sensors(filename='sensors.json'):
+    try:
+        with open(filename, 'r') as f:
+            sensor_data = json.load(f)
+            sensors = [Sensor(data['x'], 
+                              data['y'], 
+                              data['radius'],
+                              data['id']) for data in sensor_data]
+            return sensors
+    except FileNotFoundError:
+        return []
 
 def draw_text(screen, text, pos):
     text_surface = font.render(text, True, BLACK)
@@ -149,8 +211,8 @@ def draw_text(screen, text, pos):
 
 def main():
     clock = pygame.time.Clock()
-    car = Car(WIDTH // 2, HEIGHT // 2)
-    sensors = [
+    car = Car(WIDTH // 10, 9 * HEIGHT // 10)
+    sensors = load_sensors() or [
         Sensor(100, 100, SENSOR_RADIUS, 0), 
         Sensor(200, 200, SENSOR_RADIUS, 1),
         Sensor(200, 500, SENSOR_RADIUS, 2),
@@ -158,11 +220,13 @@ def main():
 
     running = True
     while running:
+        
         screen.fill(WHITE)
 
         # Обработка событий
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                save_sensors(sensors)
                 running = False
 
         # Обновление состояния машины
@@ -173,6 +237,8 @@ def main():
         # Отрисовка
         car.draw(screen)
         for sensor in sensors:
+            sensor.drag()
+            sensor.check_car(car)
             sensor.draw(screen)
 
         # Вывод текста
